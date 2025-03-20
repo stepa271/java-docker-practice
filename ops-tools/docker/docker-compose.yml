@@ -46,7 +46,7 @@ services:
     networks:
       - docker-practice-net
     ports:
-      - "8080:8080"
+      - "8888:8080"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/school
       SPRING_DATASOURCE_USERNAME: postgres
