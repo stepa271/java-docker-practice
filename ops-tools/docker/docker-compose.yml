@@ -1,0 +1,60 @@
+version: "3.8"
+
+networks:
+  docker-practice-net:
+    driver: bridge
+
+services:
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    networks:
+      - docker-practice-net
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: school
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: school
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+      - ./data/dump:/db-dump
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      retries: 5
+      start_period: 20s
+
+  redis:
+    image: redis:6.2
+    container_name: redis
+    networks:
+      - docker-practice-net
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      retries: 5
+      start_period: 10s
+
+  app:
+    build:
+      context: ../../
+      dockerfile: ops-tools/docker/images/app/Dockerfile
+    container_name: spring-app
+    networks:
+      - docker-practice-net
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/school
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: school
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
